@@ -10,6 +10,29 @@ let g:loaded_obsession = 1
 command! -bar -bang -complete=file -nargs=? Obsession
       \ execute s:dispatch(<bang>0, <q-args>)
 
+function! s:get_session_path()
+	set shellslash
+    let cache_dir = expand($HOME) . "/.cache/vim/"
+
+    if !isdirectory(cache_dir)
+        call mkdir(cache_dir)
+    endif
+	
+	let cwd = substitute(getcwd(), '/', '_', 'g')
+	let cwd = substitute(cwd, ':', '_', 'g')
+	let dir = cache_dir . cwd . '/'
+
+    if !isdirectory(dir)
+        call mkdir(dir)
+    endif
+	
+	if g:is_os_windows
+		set noshellslash
+	endif
+
+    return dir . "/Session.vim"
+endfunction
+
 function! s:dispatch(bang, file) abort
   let session = get(g:, 'this_obsession', v:this_session)
   try
@@ -25,10 +48,12 @@ function! s:dispatch(bang, file) abort
     elseif empty(a:file) && !empty(session)
       let file = session
     elseif empty(a:file)
-      let file = getcwd() . '/Session.vim'
+      " let file = getcwd() . '/Session.vim'
+      let file = s:get_session_path()
     elseif isdirectory(a:file)
-      let file = substitute(fnamemodify(expand(a:file), ':p'), '[\/]$', '', '')
-            \ . '/Session.vim'
+      " let file = substitute(fnamemodify(expand(a:file), ':p'), '[\/]$', '', '')
+            " \ . '/Session.vim'
+      let file = s:get_session_path()
     else
       let file = fnamemodify(expand(a:file), ':p')
     endif
@@ -98,8 +123,16 @@ function! ObsessionStatus(...) abort
   return substitute(fmt, '%s', get(['', 'Session', 'Obsession'], numeric), 'g')
 endfunction
 
+function! s:auto_load_session()
+  let session_path = s:get_session_path()
+  if filereadable(session_path)
+    exec "source " .session_path
+  endif
+endfunction
+
 augroup obsession
   autocmd!
+  au VimEnter * nested call s:auto_load_session()
   autocmd BufEnter,VimLeavePre * exe s:persist()
   autocmd User Flags call Hoist('global', 'ObsessionStatus')
 augroup END
