@@ -94,7 +94,6 @@ function! s:persist() abort
   let sessionoptions = &sessionoptions
   if exists('g:this_obsession')
     try
-      echo "mksession ft:" . &ft . "##"
       set sessionoptions-=blank sessionoptions-=options sessionoptions+=tabpages
       execute 'mksession! '.fnameescape(g:this_obsession)
       let body = readfile(g:this_obsession)
