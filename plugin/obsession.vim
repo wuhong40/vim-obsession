@@ -17,7 +17,7 @@ function! s:get_session_path()
     if !isdirectory(cache_dir)
         call mkdir(cache_dir)
     endif
-	
+
 	let cwd = substitute(getcwd(), '/', '_', 'g')
 	let cwd = substitute(cwd, ':', '_', 'g')
 	let dir = cache_dir . cwd . '/'
@@ -25,7 +25,7 @@ function! s:get_session_path()
     if !isdirectory(dir)
         call mkdir(dir)
     endif
-	
+
 	if g:is_os_windows
 		set noshellslash
 	endif
@@ -82,9 +82,19 @@ function! s:persist() abort
   if exists('g:SessionLoad')
     return ''
   endif
+
+  if &ft == ""
+    return ''
+  endif
+
+  if exists('g:obsession_blacklist_fts') && has_key(g:obsession_blacklist_fts, &ft)
+    return ''
+  endif
+
   let sessionoptions = &sessionoptions
   if exists('g:this_obsession')
     try
+      echo "mksession ft:" . &ft . "##"
       set sessionoptions-=blank sessionoptions-=options sessionoptions+=tabpages
       execute 'mksession! '.fnameescape(g:this_obsession)
       let body = readfile(g:this_obsession)
